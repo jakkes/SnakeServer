@@ -13,9 +13,11 @@ namespace SnakeServer
 {
     public class Game : WebSocketServer
     {
-        ConcurrentDictionary<string, Player> _players = new ConcurrentDictionary<string, Player>();
-        ConcurrentQueue<Player> _joining = new ConcurrentQueue<Player>();
-        ConcurrentQueue<Player> _leaving = new ConcurrentQueue<Player>();
+        public int Count { get { return _players.Count + _joining.Count - _leaving.Count; } }
+
+        private ConcurrentDictionary<string, Player> _players = new ConcurrentDictionary<string, Player>();
+        private ConcurrentQueue<Player> _joining = new ConcurrentQueue<Player>();
+        private ConcurrentQueue<Player> _leaving = new ConcurrentQueue<Player>();
 
         private Random _random = new Random();
         private const int _width = 1000;

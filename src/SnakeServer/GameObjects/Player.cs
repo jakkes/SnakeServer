@@ -40,10 +40,6 @@ namespace SnakeServer.GameObjects
             _nodes.Add(start);
             _moveTimer = new Timer(new TimerCallback(Move), null, 0, 1000 / 60);
         }
-        public void ReadyForConnect()
-        {
-            _conn.Send(JsonConvert.SerializeObject(new ReadyResponseModel()));
-        }
         public void Die()
         {
             Died?.Invoke(this, null);
