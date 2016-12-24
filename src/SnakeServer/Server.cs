@@ -17,7 +17,7 @@ namespace SnakeServer
         private Queue<Player> _playerQueue = new Queue<Player>();
         public Server(int port) : base(port)
         {
-            _checkTimer = new Timer(new TimerCallback(_checkForEmptySpots), null, 1000, 500);
+            _checkTimer = new Timer(new TimerCallback(_checkForEmptySpots), null, 1000, 50);
         }
         protected override void onClientConnect(Connection conn)
         {

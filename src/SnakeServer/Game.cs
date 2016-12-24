@@ -22,15 +22,19 @@ namespace SnakeServer
         private Queue<Player> _joining = new Queue<Player>();
         private Queue<Player> _leaving = new Queue<Player>();
 
+        private Queue<Apple> _spawningApples = new Queue<Apple>();
+        private HashSet<Apple> _apples = new HashSet<Apple>();
+        private Queue<Apple> _despawningApples = new Queue<Apple>();
+
         private Random _random = new Random();
-        private const int _width = 1024;
-        private const int _height = 720;
-        private const int _playerCount = 4;
+        private double _width = Config.Width;
+        private double _height = Config.Height;
+        private int _playerCount = 4;
 
         private Timer _collisionTimer;
         private int _collisionCheckRate = 60;
-        
-        private int _snakeRadius = 5;
+
+        private Timer _appleSpawnTimer;
 
         public Game() { }
         public void AddPlayer(Player player)
@@ -51,11 +55,24 @@ namespace SnakeServer
         {
             State = ServerState.Running;
             foreach (var player in _players.Values)
-                player.Start(new Node(_random.Next(_width), _random.Next(_height)), _random.NextDouble() * 2 * Math.PI);
+                player.Start(new Node(_random.Next((int)_width), _random.Next((int)_height)), _random.NextDouble() * 2 * Math.PI);
 
-            _collisionTimer = new Timer(new TimerCallback(gameLoop), null, 0, 1000 / _collisionCheckRate);
+            _collisionTimer = new Timer(new TimerCallback(gameLoop), null, 1, 1000 / _collisionCheckRate);
+            _appleSpawnTimer = new Timer(new TimerCallback(_spawnApple), null, 0, Config.AppleSpawnTime * 1000);
             Started?.Invoke(this, null);
         }
+        private void _spawnApple(object state)
+        {
+            var a = new Apple(_random.Next((int)_width), _random.Next((int)_height));
+            a.Despawned += _despawnApple;
+            _spawningApples.Enqueue(a);
+        }
+
+        private void _despawnApple(object sender, EventArgs e)
+        {
+            _despawningApples.Enqueue((Apple)sender);
+        }
+
         private void _playerDied(object sender, EventArgs e)
         {
             ((Player)sender).Died -= _playerDied;
@@ -65,7 +82,25 @@ namespace SnakeServer
                 Stop();
             }
         }
-        private void _addJoining()
+        private void _addSpawningApples()
+        {
+            int count = _spawningApples.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var apple = _spawningApples.Dequeue();
+                _apples.Add(apple);
+            }
+        }
+        private void _removeDespawningApples()
+        {
+            int count = _despawningApples.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var apple = _despawningApples.Dequeue();
+                _apples.Remove(apple);
+            }
+        }
+        private void _addJoiningPlayers()
         {
             int count = _joining.Count;
             for (int i = 0; i < count; i++)
@@ -74,7 +109,7 @@ namespace SnakeServer
                 _players.Add(pl.ID, pl);
             }
         }
-        private void _removeLeaving()
+        private void _removeLeavingPlayers()
         {
             int count = _leaving.Count;
             for (int i = 0; i < count; i++)
@@ -88,7 +123,7 @@ namespace SnakeServer
             if (State == ServerState.Stopped)
                 return;
 
-            _addJoining();
+            _addJoiningPlayers();
 
             var players = _players.Values;
             
@@ -96,12 +131,14 @@ namespace SnakeServer
             {
                 var head1 = p1.Head;
 
+                #region Check if player is inside the game field
                 if(head1.X > _width || head1.X < 0 || head1.Y > _height || head1.Y < 0)
                 {
                     p1.Die();
                     continue;
                 }
-
+                #endregion
+                #region Check collision with other snakes
                 foreach (var p2 in players)
                 {
                     if (ReferenceEquals(p1, p2))
@@ -110,7 +147,7 @@ namespace SnakeServer
                     var nodes = p2.Nodes;
                     foreach(var node in nodes)
                     {
-                        if(node?.DistanceTo(head1) < 2 * _snakeRadius)
+                        if(node?.DistanceTo(head1) < 2 * Config.SnakeRadius)
                         {
                             p1.Die();
                             break;
@@ -119,14 +156,30 @@ namespace SnakeServer
                     if (p1.State == Player.SnakeState.Dead)
                         break;
                 }
+                #endregion
+                #region Check collision with apples
+                _addSpawningApples();
+                foreach (var apple in _apples)
+                {
+                    if (head1.DistanceTo(apple) < Config.SnakeRadius + Config.AppleRadius)
+                    {
+                        apple.Despawn();
+                        p1.Grow(Config.AppleGrowLength);
+                    }
+                }
+                _removeDespawningApples();
+                #endregion
             }
 
-            _removeLeaving();
+            _removeLeavingPlayers();
 
             List<SnakeModel> models = new List<SnakeModel>();
             foreach (var player in players)
                 models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading });
-            string serialized = JsonConvert.SerializeObject(new SnakeDataModel() { Snakes = models });
+            List<Node> apples = new List<Node>();
+            lock (_apples)
+                apples.AddRange(_apples);
+            string serialized = JsonConvert.SerializeObject(new GameDataModel() { Snakes = models, Apples = apples });
             foreach (var player in players)
                 player.Send(serialized);
         }
