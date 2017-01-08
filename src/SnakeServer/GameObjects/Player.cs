@@ -60,11 +60,11 @@ namespace SnakeServer.GameObjects
             _nodes.Add(start);
             _moveTimer = new Timer(new TimerCallback(Move), null, 1000, 1000 / Config.SnakeMovementRate);
         }
-        public void Send(string message)
+        public async void Send(string message)
         {
             try
             {
-                _conn.Send(message);
+                Task.Run(() => _conn.Send(message));
             } catch (Exception)
             {
                 Die();
