@@ -186,7 +186,7 @@ namespace SnakeServer
                 apples.AddRange(_apples);
             string serialized = JsonConvert.SerializeObject(new GameDataModel() { Snakes = models, Apples = apples });
             foreach (var player in players)
-                Task.Run(() =>  player.Send(serialized));
+                player.Send(serialized);
 
             _checkingCollision = false;
         }
