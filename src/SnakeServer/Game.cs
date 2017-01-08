@@ -33,6 +33,7 @@ namespace SnakeServer
 
         private Timer _collisionTimer;
         private int _collisionCheckRate = 60;
+        private bool _checkingCollision = false;
 
         private Timer _appleSpawnTimer;
 
@@ -122,6 +123,10 @@ namespace SnakeServer
         {
             if (State == ServerState.Stopped)
                 return;
+            if (_checkingCollision)
+                return;
+            
+            _checkingCollision = true;
 
             _addJoiningPlayers();
 
@@ -182,6 +187,8 @@ namespace SnakeServer
             string serialized = JsonConvert.SerializeObject(new GameDataModel() { Snakes = models, Apples = apples });
             foreach (var player in players)
                 Task.Run(() =>  player.Send(serialized));
+
+            _checkingCollision = false;
         }
         public enum ServerState
         {
