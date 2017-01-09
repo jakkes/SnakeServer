@@ -32,7 +32,7 @@ namespace SnakeServer
         private int _playerCount = 4;
 
         private Timer _collisionTimer;
-        private int _collisionCheckRate = 60;
+        private int _collisionCheckRate = 30;
         private bool _checkingCollision = false;
 
         private Timer _appleSpawnTimer;
@@ -68,12 +68,10 @@ namespace SnakeServer
             a.Despawned += _despawnApple;
             _spawningApples.Enqueue(a);
         }
-
         private void _despawnApple(object sender, EventArgs e)
         {
             _despawningApples.Enqueue((Apple)sender);
         }
-
         private void _playerDied(object sender, EventArgs e)
         {
             ((Player)sender).Died -= _playerDied;
@@ -186,7 +184,7 @@ namespace SnakeServer
                 apples.AddRange(_apples);
             string serialized = JsonConvert.SerializeObject(new GameDataModel() { Snakes = models, Apples = apples });
             foreach (var player in players)
-                player.Send(serialized);
+                Task.Run(() => player.Send(serialized));
 
             _checkingCollision = false;
         }

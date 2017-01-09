@@ -22,6 +22,7 @@ namespace SnakeServer.GameObjects
         public event EventHandler ConnectRequested;
         public event EventHandler Died;
 
+        private bool _sending = false;
         
         public string ID { get { return _conn.ID; } }
         public double Heading { get; private set; }
@@ -60,15 +61,19 @@ namespace SnakeServer.GameObjects
             _nodes.Add(start);
             _moveTimer = new Timer(new TimerCallback(Move), null, 1000, 1000 / Config.SnakeMovementRate);
         }
-        public async void Send(string message)
+        public void Send(string message)
         {
+            if (_sending)
+                return;
+            else _sending = true;
             try
             {
-                Task.Run(() => _conn.Send(message));
+                _conn.Send(message);
             } catch (Exception)
             {
                 Die();
             }
+            _sending = false;
         }
         public void Die()
         {

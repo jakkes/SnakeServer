@@ -8,6 +8,7 @@ namespace SnakeServer
         {
             var src = new Server(8080);
             src.Start();
+            Console.WriteLine("Started server on port 8080");
             Console.ReadLine();
         }
     }
