@@ -79,6 +79,7 @@ namespace SnakeServer.GameObjects
         {
             State = SnakeState.Alive;
             Heading = heading;
+            _length = Config.SnakeStartLength;
             _nodes = new List<Node>();
             _nodes.Add(start);
             _moveTimer = new Timer(new TimerCallback(Move), null, 0, 1000 / Config.SnakeMovementRate);
@@ -126,6 +127,14 @@ namespace SnakeServer.GameObjects
             _nodes.Insert(0, new Node(Head.X + Config.SnakeMovementLength * Math.Cos(Heading), Head.Y + Config.SnakeMovementLength * Math.Sin(Heading)));
             if (_nodes.Count > _length)
                 _nodes.RemoveRange(_length, _nodes.Count - _length);
+            for (int i = (int)(Config.SnakeRadius * 4 / Config.SnakeMovementLength); i < _nodes.Count; i++)
+            {
+                if (Head.DistanceTo(_nodes[i]) < 2 * Config.SnakeRadius)
+                {
+                    Die();
+                    break;
+                }
+            }
         }
         private void _turnElapsed(object state)
         {
