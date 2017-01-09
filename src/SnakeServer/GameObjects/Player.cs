@@ -88,7 +88,8 @@ namespace SnakeServer.GameObjects
             try
             {
                 _conn.Send(message);
-            } catch (Exception)
+            }
+            catch (ConnectionClosedException)
             {
                 Die();
             }
