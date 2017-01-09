@@ -22,8 +22,10 @@ namespace SnakeServer.GameObjects
         public event EventHandler ConnectRequested;
         public event EventHandler Died;
 
-        private bool _sending = false;
-        
+        private GameDataModel _gameData;
+        private Queue<ResponseModel> _modelsQueue = new Queue<ResponseModel>();
+
+
         public string ID { get { return _conn.ID; } }
         public double Heading { get; private set; }
         public Node Head { get { return _nodes[0]; } }
@@ -50,8 +52,28 @@ namespace SnakeServer.GameObjects
         {
             _conn = conn;
             _conn.MessageReceived += _conn_MessageReceived;
+            _conn.MessageSent += _conn_MessageSent;
             _conn.Closed += _conn_Closed;
             _conn.Send(JsonConvert.SerializeObject(new ConnectResponseModel() { Id = ID }));
+        }
+
+        private void _conn_MessageSent(object sender, EventArgs e)
+        {
+            if (_modelsQueue.Count > 0)
+            {
+                var model = _modelsQueue.Dequeue();
+                try { _send(JsonConvert.SerializeObject(model)); }
+                catch (ConnectionBusyException) { _modelsQueue.Enqueue(model); }
+            }
+            else if(_gameData != null)
+            {
+                try
+                {
+                    _send(JsonConvert.SerializeObject((_gameData)));
+                    _gameData = null;
+                }
+                catch (ConnectionBusyException) { }
+            }
         }
         public void Start(Node start, double heading)
         {
@@ -59,13 +81,10 @@ namespace SnakeServer.GameObjects
             Heading = heading;
             _nodes = new List<Node>();
             _nodes.Add(start);
-            _moveTimer = new Timer(new TimerCallback(Move), null, 1000, 1000 / Config.SnakeMovementRate);
+            _moveTimer = new Timer(new TimerCallback(Move), null, 0, 1000 / Config.SnakeMovementRate);
         }
-        public void Send(string message)
+        private void _send(string message)
         {
-            if (_sending)
-                return;
-            else _sending = true;
             try
             {
                 _conn.Send(message);
@@ -73,7 +92,20 @@ namespace SnakeServer.GameObjects
             {
                 Die();
             }
-            _sending = false;
+        }
+        public void Send(ResponseModel data)
+        {
+            try
+            { _conn.Send(JsonConvert.SerializeObject(data)); }
+            catch (ConnectionBusyException)
+            { _modelsQueue.Enqueue(data); }
+        }
+        public void SendGameData(GameDataModel data)
+        {
+            try
+            { _conn.Send(JsonConvert.SerializeObject(data)); }
+            catch (ConnectionBusyException)
+            { _gameData = data; }
         }
         public void Die()
         {
@@ -81,7 +113,7 @@ namespace SnakeServer.GameObjects
             _moveTimer?.Dispose();
             _turnTimer?.Dispose();
             if (_conn.State == WebSocketState.Open)
-                Send(JsonConvert.SerializeObject(new DiedResponseModel()));
+                Send(new DiedResponseModel());
             Died?.Invoke(this, null);
         }
         public void Grow(int length)
@@ -115,7 +147,7 @@ namespace SnakeServer.GameObjects
                     ConnectRequested?.Invoke(this, null);
                     break;
                 case "Settings":
-                    Send(JsonConvert.SerializeObject(new SettingsResponseModel() { Settings = Config.Constants }));
+                    Send(new SettingsResponseModel() { Settings = Config.Constants });
                     break;
             }
         }
