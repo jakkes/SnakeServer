@@ -28,6 +28,7 @@ namespace SnakeServer.GameObjects
 
         public string ID { get { return _conn.ID; } }
         public double Heading { get; private set; }
+        public int Length { get { return _length; } }
         public Node Head { get { return _nodes[0]; } }
         public Node[] Nodes { get { lock (_nodes) return _nodes.ToArray(); } }
         public SnakeState State { get; set; } = SnakeState.Dead;

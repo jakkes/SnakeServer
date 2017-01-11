@@ -178,7 +178,7 @@ namespace SnakeServer
 
             List<SnakeModel> models = new List<SnakeModel>();
             foreach (var player in players)
-                models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading });
+                models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading, Length = player.Length });
             List<Node> apples = new List<Node>();
             lock (_apples)
                 apples.AddRange(_apples);

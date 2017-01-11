@@ -16,7 +16,7 @@ namespace SnakeServer
         public static int SnakeStartLength { get { return 60; } }
         public static double SnakeTurnRate { get { return 60; } }
         public static double SnakeTurnLength { get { return 0.05; } }
-        public static int SnakeMovementRate { get { return 60; } }
+        public static int SnakeMovementRate { get { return Constants.SnakeMovementRate; } }
         public static int AppleDespawnTime { get { return 30; } }
         public static int AppleGrowLength { get { return 30; } }
         public static int AppleSpawnTime { get { return 10; } }
@@ -31,6 +31,7 @@ namespace SnakeServer
         public double Width = 1280;
         public double Height;
         public double SnakeMovementLength = 2;
+        public int SnakeMovementRate = 60;
         public double SnakeRadius = 1;
         public int PlayerCount = 4;
         public double AppleRadius = 5;

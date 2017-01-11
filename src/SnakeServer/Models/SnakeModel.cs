@@ -7,5 +7,6 @@ namespace SnakeServer.Models
 
         public Node[] Nodes { get; set; }
         public double Heading { get; set; }
+        public int Length { get; set; }
     }
 }
