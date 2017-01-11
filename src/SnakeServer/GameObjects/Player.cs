@@ -115,7 +115,15 @@ namespace SnakeServer.GameObjects
             _moveTimer?.Dispose();
             _turnTimer?.Dispose();
             if (_conn.State == WebSocketState.Open)
-                Send(new DiedResponseModel());
+            {
+                try
+                {
+                    Send(new DiedResponseModel());
+                } catch (ConnectionBusyException)
+                {
+                    _modelsQueue.Enqueue(new DiedResponseModel());
+                }
+            }
             Died?.Invoke(this, null);
         }
         public void Grow(int length)
@@ -157,7 +165,10 @@ namespace SnakeServer.GameObjects
                     ConnectRequested?.Invoke(this, null);
                     break;
                 case "Settings":
-                    Send(new SettingsResponseModel() { Settings = Config.Constants });
+                    try
+                    {
+                        Send(new SettingsResponseModel() { Settings = Config.Constants });
+                    } catch (ConnectionBusyException) { _modelsQueue.Enqueue(new SettingsResponseModel() { Settings = Config.Constants }); }
                     break;
             }
         }
