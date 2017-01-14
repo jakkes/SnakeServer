@@ -125,7 +125,7 @@ namespace SnakeServer.GameObjects
                 } catch (ConnectionBusyException)
                 {
                     _modelsQueue.Enqueue(new DiedResponseModel());
-                }
+                } catch (ConnectionClosedException){}
             }
             Died?.Invoke(this, null);
         }
