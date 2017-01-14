@@ -36,7 +36,7 @@ namespace SnakeServer
         private bool _checkingCollision = false;
 
         private Timer _broadcastTimer;
-        private int _broadcastRate = 2;
+        private int _broadcastRate = 10;
 
         private Timer _appleSpawnTimer;
 
