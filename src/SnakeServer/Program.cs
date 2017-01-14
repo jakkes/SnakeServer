@@ -10,6 +10,7 @@ namespace SnakeServer
             src.Start();
             Console.WriteLine("Started server on port 8080");
             Console.ReadLine();
+            src.Close(true);
         }
     }
 }
