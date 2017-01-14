@@ -35,6 +35,9 @@ namespace SnakeServer
         private int _collisionCheckRate = 30;
         private bool _checkingCollision = false;
 
+        private Timer _broadcastTimer;
+        private int _broadcastRate = 2;
+
         private Timer _appleSpawnTimer;
 
         public Game() { }
@@ -49,6 +52,8 @@ namespace SnakeServer
         {
             State = ServerState.Stopped;
             _collisionTimer?.Dispose();
+            _appleSpawnTimer?.Dispose();
+            _broadcastTimer?.Dispose();
 
             Stopped?.Invoke(this, null);
         }
@@ -60,8 +65,15 @@ namespace SnakeServer
 
             _collisionTimer = new Timer(new TimerCallback(gameLoop), null, 1, 1000 / _collisionCheckRate);
             _appleSpawnTimer = new Timer(new TimerCallback(_spawnApple), null, 0, Config.AppleSpawnTime * 1000);
+            _broadcastTimer = new Timer(new TimerCallback(_broadcast), null, 0, 1000 / _broadcastRate);
             Started?.Invoke(this, null);
         }
+
+        private void _broadcast(object state)
+        {
+            throw new NotImplementedException();
+        }
+
         private void _spawnApple(object state)
         {
             var a = new Apple(_random.Next((int)_width), _random.Next((int)_height));
