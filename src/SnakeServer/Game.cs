@@ -71,7 +71,16 @@ namespace SnakeServer
 
         private void _broadcast(object state)
         {
-            throw new NotImplementedException();
+            List<SnakeModel> models = new List<SnakeModel>();
+            var players = _players.Values.ToArray();
+            foreach (var player in players)
+                models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading, Length = player.Length });
+            List<Node> apples = new List<Node>();
+            lock (_apples)
+                apples.AddRange(_apples);
+            var model = new GameDataModel() { Snakes = models, Apples = apples };
+            foreach (var player in players)
+                Task.Run(() => player.SendGameData(model));
         }
 
         private void _spawnApple(object state)
@@ -187,16 +196,6 @@ namespace SnakeServer
             }
 
             _removeLeavingPlayers();
-
-            List<SnakeModel> models = new List<SnakeModel>();
-            foreach (var player in players)
-                models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading, Length = player.Length });
-            List<Node> apples = new List<Node>();
-            lock (_apples)
-                apples.AddRange(_apples);
-            var model = new GameDataModel() { Snakes = models, Apples = apples };
-            foreach (var player in players)
-                Task.Run(() => player.SendGameData(model));
 
             _checkingCollision = false;
         }
