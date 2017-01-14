@@ -19,7 +19,7 @@ namespace SnakeServer
         {
             _checkTimer = new Timer(new TimerCallback(_checkForEmptySpots), null, 1000, 50);
         }
-        public override void Close(bool hardquit){
+        public new void Close(bool hardquit){
             foreach(var game in _servers){
                 game.Stop();
             }
