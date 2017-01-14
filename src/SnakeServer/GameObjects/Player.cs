@@ -84,6 +84,8 @@ namespace SnakeServer.GameObjects
             _nodes = new List<Node>();
             _nodes.Add(start);
             _moveTimer = new Timer(new TimerCallback(Move), null, 0, 1000 / Config.SnakeMovementRate);
+
+            Send(new GameStartResponseModel());
         }
         private void _send(string message)
         {
