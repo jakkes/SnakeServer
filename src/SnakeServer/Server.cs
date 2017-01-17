@@ -13,15 +13,20 @@ namespace SnakeServer
         private Timer _checkTimer;
 
         private HashSet<Game> _runningGames = new HashSet<Game>();
-        private List<Game> _servers = new List<Game>();
+        private Queue<Game> _waitingGames = new Queue<Game>();
         private Queue<Player> _playerQueue = new Queue<Player>();
         public Server(int port) : base(port)
         {
-            _checkTimer = new Timer(new TimerCallback(_checkForEmptySpots), null, 1000, 50);
+            _checkTimer = new Timer(new TimerCallback(_checkForEmptySpots), null, 1000, 1000);
         }
         public new void Close(bool hardquit){
-            foreach(var game in _servers){
+            foreach (var game in _waitingGames)
+            {
                 game.Stop();
+            }
+            foreach (var conn in Connections)
+            {
+                conn.Close(hardquit);
             }
             base.Close(hardquit);
         }
@@ -34,33 +39,36 @@ namespace SnakeServer
         {
             Player pl = ((Player)sender);
             _playerQueue.Enqueue(pl);
+            Console.WriteLine("Connect requested.");
         }
         private void _checkForEmptySpots(object state)
         {
-            while (_servers.Count != 0 && _servers[0].State != Game.ServerState.Waiting)
-                _servers.RemoveAt(0);
-
-            if (_servers.Count == 0)
+            while (_playerQueue.Count > 0)
             {
-                var game = new Game();
-                game.Started += Game_Started;
-                game.Stopped += Game_Stopped;
-                _servers.Add(game);
-            }
+                if (_waitingGames.Count == 0)
+                {
+                    var game = new Game();
+                    _waitingGames.Enqueue(game);
+                    game.Started += Game_Started;
+                    game.Stopped += Game_Stopped;
+                }
 
-            if (_playerQueue.Count > 0)
-                _servers[0].AddPlayer(_playerQueue.Dequeue());
+                _waitingGames.Peek().AddPlayer(_playerQueue.Dequeue());
+                if (_waitingGames.Peek().Full)
+                    _waitingGames.Dequeue();
+            }
         }
 
         private void Game_Stopped(object sender, EventArgs e)
         {
             _runningGames.Remove((Game)sender);
+            Console.WriteLine("Game stopped.");
         }
 
         private void Game_Started(object sender, EventArgs e)
         {
             _runningGames.Add((Game)sender);
-            _servers.Remove((Game)sender);
+            Console.WriteLine("Started new game.");
         }
     }
 }

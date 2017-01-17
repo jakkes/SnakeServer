@@ -13,6 +13,8 @@ namespace SnakeServer
 {
     public class Game    {
         public int Count { get { return _players.Count + _joining.Count - _leaving.Count; } }
+        public bool Full { get { return Count >= Config.PlayerCount; } }
+        public bool Empty { get { return Count == 0; } }
         public ServerState State { get; set; } = ServerState.Waiting;
 
         public event EventHandler Started;
@@ -36,7 +38,7 @@ namespace SnakeServer
         private bool _checkingCollision = false;
 
         private Timer _broadcastTimer;
-        private int _broadcastRate = 10;
+        private int _broadcastRate = 2;
 
         private Timer _appleSpawnTimer;
 
@@ -65,22 +67,18 @@ namespace SnakeServer
 
             _collisionTimer = new Timer(new TimerCallback(gameLoop), null, 1, 1000 / _collisionCheckRate);
             _appleSpawnTimer = new Timer(new TimerCallback(_spawnApple), null, 0, Config.AppleSpawnTime * 1000);
-            _broadcastTimer = new Timer(new TimerCallback(_broadcast), null, 0, 1000 / _broadcastRate);
+            _broadcastTimer = new Timer(new TimerCallback(_broadcastGameData), null, 0, 1000 / _broadcastRate);
             Started?.Invoke(this, null);
         }
 
-        private void _broadcast(object state)
+        private void _broadcastGameData(object state)
         {
             List<SnakeModel> models = new List<SnakeModel>();
             var players = _players.Values.ToArray();
             foreach (var player in players)
-                models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading, Length = player.Length });
-            List<Node> apples = new List<Node>();
-            lock (_apples)
-                apples.AddRange(_apples);
-            var model = new GameDataModel() { Snakes = models, Apples = apples };
-            foreach (var player in players)
-                Task.Run(() => player.SendGameData(model));
+                models.Add(new SnakeModel() { Nodes = player.Nodes, Heading = player.Heading, Length = player.Length, ID = player.ID });
+            var model = new GameDataModel() { Snakes = models };
+            _broadcast(model);
         }
 
         private void _spawnApple(object state)
@@ -88,19 +86,35 @@ namespace SnakeServer
             var a = new Apple(_random.Next((int)_width), _random.Next((int)_height));
             a.Despawned += _despawnApple;
             _spawningApples.Enqueue(a);
+
+            var model = new AppleSpawnedResponseModel(a);
+            _broadcast(model);
         }
         private void _despawnApple(object sender, EventArgs e)
         {
             _despawningApples.Enqueue((Apple)sender);
+
+            var model = new AppleDespawnedResponseModel(((Apple)sender).ID);
+            _broadcast(model);
+        }
+        private void _broadcast(GameDataModel model)
+        {
+            foreach (var player in _players.Values.ToArray())
+                Task.Run(() => player.Send(model));
+        }
+        private void _broadcast(ResponseModel model)
+        {
+            foreach (var player in _players.Values.ToArray())
+                Task.Run(() => player.Send(model));
         }
         private void _playerDied(object sender, EventArgs e)
         {
+            Console.WriteLine("Player died");
             ((Player)sender).Died -= _playerDied;
             _leaving.Enqueue((Player)sender);
-            if (_players.Count - _leaving.Count <= 0)
-            {
+            _broadcast(new SnakeDiedResponseModel(((Player)sender).ID));
+            if (Empty)
                 Stop();
-            }
         }
         private void _addSpawningApples()
         {

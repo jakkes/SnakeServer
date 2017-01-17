@@ -9,7 +9,6 @@ namespace SnakeServer.Models
     public class GameDataModel : ResponseModel
     {
         public List<SnakeModel> Snakes { get; set; }
-        public List<Node> Apples { get; set; }
         public GameDataModel() { Action = "GameData"; }
     }
 }

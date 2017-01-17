@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SnakeServer.GameObjects
 {
+    public delegate void TurnStateChangedEventHandler(Player player, Player.TurnState state);
     public class Player
     {
 
@@ -101,16 +102,14 @@ namespace SnakeServer.GameObjects
         public void Send(ResponseModel data)
         {
             try
-            { _conn.Send(JsonConvert.SerializeObject(data)); }
+            { _send(JsonConvert.SerializeObject(data)); }
             catch (ConnectionBusyException)
             { _modelsQueue.Enqueue(data); }
         }
-        public void SendGameData(GameDataModel data)
+        public void Send(GameDataModel model)
         {
-            try
-            { _conn.Send(JsonConvert.SerializeObject(data)); }
-            catch (ConnectionBusyException)
-            { _gameData = data; }
+            try { _send(JsonConvert.SerializeObject(_gameData = model)); }
+            catch (ConnectionBusyException) { _gameData = model; }
         }
         public void Die()
         {
@@ -119,13 +118,7 @@ namespace SnakeServer.GameObjects
             _turnTimer?.Dispose();
             if (_conn.State == WebSocketState.Open)
             {
-                try
-                {
-                    Send(new DiedResponseModel());
-                } catch (ConnectionBusyException)
-                {
-                    _modelsQueue.Enqueue(new DiedResponseModel());
-                } catch (ConnectionClosedException){}
+                Send(new DiedResponseModel());
             }
             Died?.Invoke(this, null);
         }

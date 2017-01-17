@@ -30,7 +30,7 @@ namespace SnakeServer
     {
         public double Width = 1280;
         public double Height;
-        public double SnakeMovementLength = 2;
+        public double SnakeMovementLength = 3;
         public int SnakeMovementRate = 60;
         public double SnakeRadius = 1;
         public int PlayerCount = 4;
