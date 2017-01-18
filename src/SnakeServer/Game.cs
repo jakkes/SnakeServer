@@ -15,6 +15,7 @@ namespace SnakeServer
         public int Count { get { return _players.Count + _joining.Count - _leaving.Count; } }
         public bool Full { get { return Count >= Config.PlayerCount; } }
         public bool Empty { get { return Count == 0; } }
+        public Player[] Players { get { return _players.Values.ToArray(); } }
         public ServerState State { get; set; } = ServerState.Waiting;
 
         public event EventHandler Started;
@@ -163,7 +164,7 @@ namespace SnakeServer
 
             _addJoiningPlayers();
 
-            var players = _players.Values;
+            var players = Players;
             
             foreach(var p1 in players)
             {

@@ -14,7 +14,7 @@ namespace SnakeServer.GameObjects
     {
 
         private Connection _conn;
-        private List<Node> _nodes;
+        private List<Node> _nodes = new List<Node>();
         private Timer _moveTimer;
         private Timer _turnTimer;
 
@@ -67,15 +67,15 @@ namespace SnakeServer.GameObjects
                 try { _send(JsonConvert.SerializeObject(model)); }
                 catch (ConnectionBusyException) { _modelsQueue.Enqueue(model); }
             }
-            else if(_gameData != null)
-            {
-                try
-                {
-                    _send(JsonConvert.SerializeObject((_gameData)));
-                    _gameData = null;
-                }
-                catch (ConnectionBusyException) { }
-            }
+            //else if(_gameData != null)
+            //{
+            //    try
+            //    {
+            //        _send(JsonConvert.SerializeObject((_gameData)));
+            //        _gameData = null;
+            //    }
+            //    catch (ConnectionBusyException) { }
+            //}
         }
         public void Start(Node start, double heading)
         {
